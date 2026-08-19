@@ -65,6 +65,59 @@ def list_documents() -> list[DocumentInfo]:
     return [DocumentInfo(**d) for d in pipeline.documents()]
 
 
+_insights_cache: dict[str, dict] = {}
+
+
+def _extract_json(text: str) -> dict | None:
+    import re
+    m = re.search(r"\{.*\}", text or "", re.DOTALL)
+    if not m:
+        return None
+    try:
+        return json.loads(m.group(0))
+    except Exception:
+        return None
+
+
+@app.get("/api/documents/{doc_id}/insights")
+def document_insights(doc_id: str) -> dict:
+    """AI summary + suggested questions for a document (cached)."""
+    if doc_id in _insights_cache:
+        return _insights_cache[doc_id]
+    text = pipeline.document_text(doc_id)
+    if not text.strip():
+        raise HTTPException(404, "Document not found.")
+
+    from .agent.llm import build_llm
+    generic = [
+        "What is this document about?",
+        "Summarize the key points",
+        "What are the most important details?",
+        "List any dates, names, or figures",
+    ]
+    result = {"summary": "", "questions": generic}
+    try:
+        llm = build_llm()
+        prompt = [{"role": "user", "content": (
+            "Summarize the document below in 2-3 sentences, then propose 4 concise, "
+            "specific questions a reader might ask about it. Respond ONLY as JSON: "
+            '{"summary": "...", "questions": ["q1","q2","q3","q4"]}.\n\nDOCUMENT:\n' + text
+        )}]
+        parsed = _extract_json(llm.chat(prompt).content or "")
+        if parsed and parsed.get("summary"):
+            result = {
+                "summary": parsed["summary"],
+                "questions": (parsed.get("questions") or generic)[:4] or generic,
+            }
+    except Exception as exc:  # LLM unavailable → heuristic fallback
+        result["summary"] = text[:280].strip() + ("…" if len(text) > 280 else "")
+
+    if not result["summary"]:
+        result["summary"] = text[:280].strip() + ("…" if len(text) > 280 else "")
+    _insights_cache[doc_id] = result
+    return result
+
+
 @app.get("/api/supported-types")
 def supported_types() -> dict:
     return {"extensions": SUPPORTED_EXTENSIONS}

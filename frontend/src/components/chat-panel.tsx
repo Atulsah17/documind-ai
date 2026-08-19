@@ -1,6 +1,6 @@
 "use client";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { SendHorizonal, Sparkles, FileText, ListChecks, HelpCircle, Wand2 } from "lucide-react";
+import { SendHorizonal, Sparkles, FileText, ListChecks, HelpCircle, Wand2, Download } from "lucide-react";
 import { toast } from "sonner";
 import { MessageBubble } from "@/components/message-bubble";
 import { Button } from "@/components/ui/button";
@@ -23,9 +23,11 @@ const nextId = () => `m${Date.now()}_${++idCounter}`;
 export function ChatPanel({
   onActivity,
   newChatNonce,
+  injected,
 }: {
   onActivity?: () => void;
   newChatNonce?: number;
+  injected?: { text: string; nonce: number };
 }) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
@@ -130,6 +132,36 @@ export function ChatPanel({
     await runQuery(lastUser.content);
   }
 
+  // send a question injected from elsewhere (e.g. Document Insights)
+  const injectedRef = useRef(0);
+  useEffect(() => {
+    if (!hydrated.current || !injected || injected.nonce === 0) return;
+    if (injected.nonce !== injectedRef.current) {
+      injectedRef.current = injected.nonce;
+      send(injected.text);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [injected?.nonce]);
+
+  function exportChat() {
+    const md = messages
+      .map((m) => {
+        const who = m.role === "user" ? "**You**" : "**DocuMind**";
+        let block = `${who}:\n\n${m.content}\n`;
+        if (m.sources && m.sources.length)
+          block += `\n_Sources: ${m.sources.map((s) => s.filename).join(", ")}_\n`;
+        return block;
+      })
+      .join("\n---\n\n");
+    const blob = new Blob([`# DocuMind conversation\n\n${md}`], { type: "text/markdown" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "documind-conversation.md";
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   function onKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -139,6 +171,16 @@ export function ChatPanel({
 
   return (
     <Card className="flex h-full flex-col overflow-hidden">
+      {messages.length > 0 && (
+        <div className="flex items-center justify-end border-b border-border px-3 py-1.5">
+          <button
+            onClick={exportChat}
+            className="flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          >
+            <Download className="h-3.5 w-3.5" /> Export
+          </button>
+        </div>
+      )}
       <div ref={scrollRef} className="scroll-thin flex-1 space-y-5 overflow-y-auto p-5">
         {messages.length === 0 ? (
           <EmptyState onPick={send} />

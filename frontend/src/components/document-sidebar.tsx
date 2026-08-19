@@ -16,9 +16,10 @@ const ACCEPT =
 interface Props {
   documents: DocumentInfo[];
   onChange: () => void;
+  onSelect: (doc: DocumentInfo) => void;
 }
 
-export function DocumentSidebar({ documents, onChange }: Props) {
+export function DocumentSidebar({ documents, onChange, onSelect }: Props) {
   const [dragging, setDragging] = useState(false);
   const [busy, setBusy] = useState(false);
   const [query, setQuery] = useState("");
@@ -115,15 +116,17 @@ export function DocumentSidebar({ documents, onChange }: Props) {
           {filtered.map((d) => (
             <div
               key={d.doc_id}
-              className="group flex items-center gap-2 rounded-xl border border-border bg-background/60 px-3 py-2"
+              onClick={() => onSelect(d)}
+              className="group flex cursor-pointer items-center gap-2 rounded-xl border border-border bg-background/60 px-3 py-2 transition-colors hover:border-primary/50 hover:bg-accent"
+              title="View summary & suggested questions"
             >
               <FileText className="h-4 w-4 shrink-0 text-primary" />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-xs font-medium">{d.filename}</p>
-                <p className="text-[11px] text-muted-foreground">{d.chunks} section{d.chunks > 1 ? "s" : ""}</p>
+                <p className="text-[11px] text-muted-foreground">{d.chunks} section{d.chunks > 1 ? "s" : ""} · view insights</p>
               </div>
               <button
-                onClick={() => handleDelete(d.doc_id, d.filename)}
+                onClick={(e) => { e.stopPropagation(); handleDelete(d.doc_id, d.filename); }}
                 className="text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"
                 aria-label="Remove document"
               >

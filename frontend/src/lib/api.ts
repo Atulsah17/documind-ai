@@ -37,6 +37,17 @@ export async function uploadDocuments(files: File[]): Promise<BatchUploadResult>
   return r.json();
 }
 
+export interface Insights {
+  summary: string;
+  questions: string[];
+}
+
+export async function getInsights(docId: string): Promise<Insights> {
+  const r = await fetch(`${API_BASE}/api/documents/${docId}/insights`, { cache: "no-store" });
+  if (!r.ok) throw new Error("Could not load insights");
+  return r.json();
+}
+
 export async function getSupportedTypes(): Promise<string[]> {
   try {
     const r = await fetch(`${API_BASE}/api/supported-types`, { cache: "no-store" });

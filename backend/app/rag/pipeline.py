@@ -54,6 +54,11 @@ class RagPipeline:
             for r, score in hits
         ]
 
+    def document_text(self, doc_id: str, max_chars: int = 4000) -> str:
+        """Concatenated text of a single document (for summaries/insights)."""
+        parts = [r.text for r in self.store._records if r.doc_id == doc_id]
+        return "\n\n".join(parts)[:max_chars]
+
     # ── bookkeeping ──────────────────────────────────────────
     def documents(self) -> list[dict]:
         return [
