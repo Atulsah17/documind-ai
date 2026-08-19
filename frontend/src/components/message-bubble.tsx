@@ -52,9 +52,10 @@ export function MessageBubble({ message, isLast, onRegenerate }: Props) {
               : "rounded-tl-sm border border-border bg-card"
           )}
         >
-          {renderContent(message.content)}
-          {message.streaming && (
-            <span className="ml-0.5 inline-block h-4 w-[2px] translate-y-0.5 animate-blink bg-current" />
+          {!isUser && message.streaming && !message.content ? (
+            <TypingDots />
+          ) : (
+            renderContent(message.content)
           )}
         </div>
 
@@ -126,6 +127,16 @@ function ActionButton({ children, onClick, label }: { children: React.ReactNode;
     >
       {children}
     </button>
+  );
+}
+
+function TypingDots() {
+  return (
+    <span className="flex items-center gap-1 py-1 text-muted-foreground">
+      <span className="typing-dot h-1.5 w-1.5 rounded-full bg-current" />
+      <span className="typing-dot h-1.5 w-1.5 rounded-full bg-current" style={{ animationDelay: "0.15s" }} />
+      <span className="typing-dot h-1.5 w-1.5 rounded-full bg-current" style={{ animationDelay: "0.3s" }} />
+    </span>
   );
 }
 

@@ -72,3 +72,10 @@
 
 .prose-chat p { margin: 0.25rem 0; }
 .prose-chat strong { font-weight: 600; }
+
+/* Typing indicator (three bouncing dots) */
+@keyframes typing-bounce {
+  0%, 80%, 100% { transform: translateY(0); opacity: 0.35; }
+  40% { transform: translateY(-4px); opacity: 1; }
+}
+.typing-dot { animation: typing-bounce 1.2s infinite ease-in-out; }

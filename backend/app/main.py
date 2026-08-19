@@ -118,11 +118,14 @@ async def chat(req: ChatRequest):
         for step in result.trace:
             yield {"event": "trace",
                    "data": json.dumps({"type": step.type, "name": step.name, "detail": step.detail})}
-            await asyncio.sleep(0.15)  # let the UI animate the agent 'thinking'
+            await asyncio.sleep(0.04)  # brief pause so the UI can animate each step
 
-        for word in result.answer.split(" "):
-            yield {"event": "token", "data": json.dumps({"content": word + " "})}
-            await asyncio.sleep(0.02)  # typewriter effect
+        # stream a few words per frame so the answer appears quickly (not word-by-word crawl)
+        words = result.answer.split(" ")
+        for i in range(0, len(words), 4):
+            chunk = " ".join(words[i:i + 4])
+            yield {"event": "token", "data": json.dumps({"content": chunk + " "})}
+            await asyncio.sleep(0.012)
 
         # dedupe sources by (filename, chunk_index)
         seen, sources = set(), []
