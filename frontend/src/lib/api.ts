@@ -87,13 +87,14 @@ export async function streamChat(
       if (done) break;
       buffer += decoder.decode(value, { stream: true });
 
-      const frames = buffer.split("\n\n");
+      // SSE frames are separated by a blank line — handle CRLF (\r\n\r\n) and LF (\n\n).
+      const frames = buffer.split(/\r\n\r\n|\n\n/);
       buffer = frames.pop() ?? "";
 
       for (const frame of frames) {
         let event = "message";
         let data = "";
-        for (const line of frame.split("\n")) {
+        for (const line of frame.split(/\r\n|\n/)) {
           if (line.startsWith("event:")) event = line.slice(6).trim();
           else if (line.startsWith("data:")) data += line.slice(5).trim();
         }
