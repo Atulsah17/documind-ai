@@ -75,6 +75,7 @@ Set these in `backend/.env` (all optional — `mock` is the default):
 |---|---|
 | **Azure OpenAI** | `LLM_PROVIDER=azure` · `AZURE_OPENAI_API_KEY` · `AZURE_OPENAI_ENDPOINT` · `AZURE_OPENAI_DEPLOYMENT` |
 | **OpenAI** | `LLM_PROVIDER=openai` · `OPENAI_API_KEY` |
+| **Google Gemini** | `LLM_PROVIDER=gemini` · `GEMINI_API_KEY` · `GEMINI_MODEL` |
 | **Groq (free)** | `LLM_PROVIDER=groq` · `GROQ_API_KEY` |
 
 ## ☁️ Deploy

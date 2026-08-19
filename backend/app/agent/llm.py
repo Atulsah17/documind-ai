@@ -112,6 +112,12 @@ def build_llm():
         return OpenAICompatibleLLM("https://api.openai.com/v1", settings.openai_api_key, settings.openai_model)
     if p == "groq":
         return OpenAICompatibleLLM("https://api.groq.com/openai/v1", settings.groq_api_key, settings.groq_model)
+    if p == "gemini":
+        # Google's OpenAI-compatible endpoint (supports chat + tool-calling)
+        return OpenAICompatibleLLM(
+            "https://generativelanguage.googleapis.com/v1beta/openai",
+            settings.gemini_api_key, settings.gemini_model,
+        )
     if p == "azure":
         base = f"{settings.azure_openai_endpoint}/openai/deployments/{settings.azure_openai_deployment}"
         llm = OpenAICompatibleLLM(base, "", settings.azure_openai_deployment,
