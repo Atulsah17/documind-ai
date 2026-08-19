@@ -36,7 +36,11 @@ class FastEmbedEmbedder:
     def __init__(self, model_name: str = "BAAI/bge-small-en-v1.5") -> None:
         from fastembed import TextEmbedding
 
-        self.model = TextEmbedding(model_name=model_name)
+        # threads=1 keeps the onnxruntime memory footprint small (512 MB free tier)
+        try:
+            self.model = TextEmbedding(model_name=model_name, threads=1)
+        except TypeError:  # older/newer fastembed without the kwarg
+            self.model = TextEmbedding(model_name=model_name)
         self.name = model_name
         self.dim = len(next(iter(self.model.embed(["dimension probe"]))))
 

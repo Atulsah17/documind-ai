@@ -51,7 +51,7 @@ def transcribe_image(image_bytes: bytes, mime: str) -> str:
     return _describe(image_bytes, mime)
 
 
-def transcribe_scanned_pdf(pdf_bytes: bytes, max_pages: int = 4) -> str:
+def transcribe_scanned_pdf(pdf_bytes: bytes, max_pages: int = 3) -> str:
     """Render PDF pages to images (PyMuPDF) and transcribe with vision."""
     if not vision_capable():
         return ""
@@ -65,7 +65,7 @@ def transcribe_scanned_pdf(pdf_bytes: bytes, max_pages: int = 4) -> str:
         for i, page in enumerate(doc):
             if i >= max_pages:
                 break
-            pix = page.get_pixmap(dpi=150)
+            pix = page.get_pixmap(dpi=120)
             text = _describe(pix.tobytes("png"), "image/png")
             if text:
                 out.append(f"# Page {i + 1}\n{text}")
