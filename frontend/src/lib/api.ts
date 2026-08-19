@@ -48,6 +48,23 @@ export async function getInsights(docId: string): Promise<Insights> {
   return r.json();
 }
 
+export interface ExtractRow {
+  field: string;
+  value: string;
+}
+
+export async function extractData(docId: string): Promise<ExtractRow[]> {
+  const r = await fetch(`${API_BASE}/api/documents/${docId}/extract`, { cache: "no-store" });
+  if (!r.ok) throw new Error("Could not extract data");
+  return (await r.json()).rows ?? [];
+}
+
+export async function getDocText(docId: string): Promise<string> {
+  const r = await fetch(`${API_BASE}/api/documents/${docId}/text`, { cache: "no-store" });
+  if (!r.ok) throw new Error("Could not load document");
+  return (await r.json()).text ?? "";
+}
+
 export async function getSupportedTypes(): Promise<string[]> {
   try {
     const r = await fetch(`${API_BASE}/api/supported-types`, { cache: "no-store" });

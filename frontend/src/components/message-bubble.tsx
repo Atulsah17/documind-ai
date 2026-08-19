@@ -1,9 +1,10 @@
 "use client";
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { Bot, User, FileText, Copy, Check, RotateCcw, Quote } from "lucide-react";
+import { Bot, User, FileText, Copy, Check, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { AgentTrace } from "@/components/agent-trace";
+import { SourceViewer } from "@/components/source-viewer";
 import { cn } from "@/lib/utils";
 import type { ChatMessage, Source } from "@/lib/types";
 
@@ -82,37 +83,22 @@ export function MessageBubble({ message, isLast, onRegenerate }: Props) {
 }
 
 function SourceList({ sources }: { sources: Source[] }) {
-  const [open, setOpen] = useState<number | null>(null);
+  const [viewing, setViewing] = useState<Source | null>(null);
   return (
-    <div className="space-y-1.5">
-      <div className="flex flex-wrap gap-1.5">
-        {sources.map((s, i) => (
-          <button
-            key={i}
-            onClick={() => setOpen(open === i ? null : i)}
-            className={cn(
-              "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium transition-colors",
-              open === i
-                ? "border-primary/40 bg-primary/10 text-primary"
-                : "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/70"
-            )}
-          >
-            <FileText className="h-3 w-3" />
-            {s.filename}
-            <span className="text-muted-foreground">· {(s.score * 100).toFixed(0)}% match</span>
-          </button>
-        ))}
-      </div>
-      {open !== null && sources[open] && (
-        <motion.div
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: "auto" }}
-          className="flex gap-2 rounded-xl border border-border bg-muted/50 p-3 text-xs text-muted-foreground"
+    <div className="flex flex-wrap gap-1.5">
+      {sources.map((s, i) => (
+        <button
+          key={i}
+          onClick={() => setViewing(s)}
+          title="View the cited passage in the document"
+          className="inline-flex items-center gap-1 rounded-full border border-transparent bg-secondary px-2.5 py-0.5 text-xs font-medium text-secondary-foreground transition-colors hover:bg-secondary/70"
         >
-          <Quote className="h-3.5 w-3.5 shrink-0 text-primary" />
-          <p className="line-clamp-4">{sources[open].snippet}</p>
-        </motion.div>
-      )}
+          <FileText className="h-3 w-3" />
+          {s.filename}
+          <span className="text-muted-foreground">· {(s.score * 100).toFixed(0)}% match</span>
+        </button>
+      ))}
+      {viewing && <SourceViewer source={viewing} onClose={() => setViewing(null)} />}
     </div>
   );
 }

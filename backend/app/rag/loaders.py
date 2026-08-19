@@ -14,6 +14,8 @@ SUPPORTED_EXTENSIONS = [
     ".pdf", ".docx", ".pptx", ".xlsx", ".xls",
     ".csv", ".tsv", ".json", ".html", ".htm",
     ".md", ".markdown", ".txt", ".rst", ".log",
+    # images & scanned docs (read via vision model)
+    ".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp",
     # common code / config files
     ".py", ".js", ".ts", ".tsx", ".jsx", ".java", ".go", ".rb",
     ".c", ".cpp", ".cs", ".sh", ".yaml", ".yml", ".toml", ".ini", ".sql",

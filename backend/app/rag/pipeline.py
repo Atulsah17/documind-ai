@@ -9,6 +9,9 @@ from .chunking import chunk_text
 from .embeddings import build_embedder
 from .loaders import extract_text
 from .vectorstore import Record, VectorStore
+from .vision import mime_for, transcribe_image, transcribe_scanned_pdf
+
+IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp"}
 
 
 @dataclass
@@ -28,8 +31,21 @@ class RagPipeline:
         self._chunk_counts: dict[str, int] = {}
 
     # ── ingestion ────────────────────────────────────────────
-    def ingest(self, filename: str, raw: bytes) -> dict:
+    def _read_document(self, filename: str, raw: bytes) -> str:
+        ext = ("." + filename.rsplit(".", 1)[-1].lower()) if "." in filename else ""
+        if ext in IMAGE_EXTS:
+            text = transcribe_image(raw, mime_for(ext))
+            return text or f"[Image: {filename} — no readable text found]"
         text = extract_text(filename, raw)
+        # Scanned/image-only PDF → little/no text layer; try vision OCR.
+        if ext == ".pdf" and len(text.strip()) < 40:
+            ocr = transcribe_scanned_pdf(raw)
+            if ocr.strip():
+                return ocr
+        return text
+
+    def ingest(self, filename: str, raw: bytes) -> dict:
+        text = self._read_document(filename, raw)
         chunks = chunk_text(text, settings.chunk_size, settings.chunk_overlap)
         if not chunks:
             raise ValueError("No extractable text found in document.")

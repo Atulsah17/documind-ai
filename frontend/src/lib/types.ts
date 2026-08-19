@@ -13,6 +13,7 @@ export interface Health {
 }
 
 export interface Source {
+  doc_id?: string;
   filename: string;
   chunk_index: number;
   score: number;

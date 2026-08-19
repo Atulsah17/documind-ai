@@ -1,8 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { X, FileText, Sparkles, MessageSquarePlus, Loader2 } from "lucide-react";
-import { getInsights, type Insights } from "@/lib/api";
+import { X, FileText, Sparkles, MessageSquarePlus, Loader2, Table, Download } from "lucide-react";
+import { getInsights, extractData, type Insights, type ExtractRow } from "@/lib/api";
 import type { DocumentInfo } from "@/lib/types";
 
 interface Props {
@@ -14,6 +14,8 @@ interface Props {
 export function InsightsPanel({ doc, onClose, onAsk }: Props) {
   const [data, setData] = useState<Insights | null>(null);
   const [error, setError] = useState(false);
+  const [rows, setRows] = useState<ExtractRow[] | null>(null);
+  const [extracting, setExtracting] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -22,6 +24,29 @@ export function InsightsPanel({ doc, onClose, onAsk }: Props) {
       .catch(() => active && setError(true));
     return () => { active = false; };
   }, [doc.doc_id]);
+
+  async function runExtract() {
+    setExtracting(true);
+    try {
+      setRows(await extractData(doc.doc_id));
+    } catch {
+      setRows([]);
+    } finally {
+      setExtracting(false);
+    }
+  }
+
+  function downloadCsv() {
+    if (!rows?.length) return;
+    const esc = (v: string) => `"${v.replace(/"/g, '""')}"`;
+    const csv = ["Field,Value", ...rows.map((r) => `${esc(r.field)},${esc(r.value)}`)].join("\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${doc.filename}-data.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -82,6 +107,48 @@ export function InsightsPanel({ doc, onClose, onAsk }: Props) {
                   </button>
                 ))}
               </div>
+            </section>
+          )}
+
+          {/* structured extraction */}
+          {data && (
+            <section>
+              <div className="mb-2 flex items-center justify-between">
+                <h4 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  <Table className="h-3.5 w-3.5" /> Extracted data
+                </h4>
+                {rows && rows.length > 0 && (
+                  <button onClick={downloadCsv} className="flex items-center gap-1 text-xs text-primary hover:underline">
+                    <Download className="h-3.5 w-3.5" /> CSV
+                  </button>
+                )}
+              </div>
+
+              {!rows ? (
+                <button
+                  onClick={runExtract}
+                  disabled={extracting}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-background px-3 py-2.5 text-sm font-medium transition-colors hover:border-primary/50 hover:bg-accent disabled:opacity-60"
+                >
+                  {extracting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Table className="h-4 w-4 text-primary" />}
+                  {extracting ? "Extracting…" : "Extract key data to a table"}
+                </button>
+              ) : rows.length === 0 ? (
+                <p className="text-xs text-muted-foreground">No structured data found in this document.</p>
+              ) : (
+                <div className="overflow-hidden rounded-xl border border-border">
+                  <table className="w-full text-sm">
+                    <tbody>
+                      {rows.map((r, i) => (
+                        <tr key={i} className={i % 2 ? "bg-muted/40" : ""}>
+                          <td className="border-b border-border px-3 py-2 font-medium capitalize text-muted-foreground">{r.field}</td>
+                          <td className="border-b border-border px-3 py-2">{r.value}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </section>
           )}
         </div>

@@ -11,6 +11,7 @@ import type { DocumentInfo } from "@/lib/types";
 
 const ACCEPT =
   ".pdf,.docx,.pptx,.xlsx,.xls,.csv,.tsv,.json,.html,.htm,.md,.markdown,.txt,.rst,.log," +
+  ".png,.jpg,.jpeg,.webp,.gif,.bmp," +
   ".py,.js,.ts,.tsx,.jsx,.java,.go,.rb,.c,.cpp,.cs,.sh,.yaml,.yml,.toml,.ini,.sql";
 
 interface Props {

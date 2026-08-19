@@ -118,6 +118,63 @@ def document_insights(doc_id: str) -> dict:
     return result
 
 
+@app.get("/api/documents/{doc_id}/text")
+def document_full_text(doc_id: str) -> dict:
+    """Full extracted text of a document (for the source viewer)."""
+    text = pipeline.document_text(doc_id, max_chars=20000)
+    if not text.strip():
+        raise HTTPException(404, "Document not found.")
+    return {"text": text}
+
+
+_extract_cache: dict[str, dict] = {}
+
+
+def _extract_json_list(text: str) -> list[dict] | None:
+    import re
+    m = re.search(r"\[.*\]", text or "", re.DOTALL)
+    if not m:
+        return None
+    try:
+        data = json.loads(m.group(0))
+    except Exception:
+        return None
+    rows = []
+    for it in data if isinstance(data, list) else []:
+        if isinstance(it, dict):
+            field = it.get("field") or it.get("key") or it.get("name")
+            value = it.get("value") or it.get("val") or ""
+            if field:
+                rows.append({"field": str(field), "value": str(value)})
+    return rows or None
+
+
+@app.get("/api/documents/{doc_id}/extract")
+def document_extract(doc_id: str) -> dict:
+    """Extract key structured data (field/value pairs) from a document."""
+    if doc_id in _extract_cache:
+        return _extract_cache[doc_id]
+    text = pipeline.document_text(doc_id)
+    if not text.strip():
+        raise HTTPException(404, "Document not found.")
+
+    from .agent.llm import build_llm
+    rows: list[dict] = []
+    try:
+        prompt = [{"role": "user", "content": (
+            "Extract the key structured data from the document as a JSON array of objects, "
+            'each {"field": "...", "value": "..."} (e.g. invoice number, date, total, parties, '
+            "key terms, deadlines). Return ONLY the JSON array.\n\nDOCUMENT:\n" + text
+        )}]
+        rows = _extract_json_list(build_llm().chat(prompt).content or "") or []
+    except Exception as exc:
+        print(f"[extract] failed: {exc}")
+
+    result = {"rows": rows}
+    _extract_cache[doc_id] = result
+    return result
+
+
 @app.get("/api/supported-types")
 def supported_types() -> dict:
     return {"extensions": SUPPORTED_EXTENSIONS}

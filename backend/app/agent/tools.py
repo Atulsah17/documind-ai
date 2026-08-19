@@ -74,7 +74,7 @@ class ToolRegistry:
             hits = self.pipeline.retrieve(args["query"], k=args.get("k"))
             return json.dumps({
                 "results": [
-                    {"filename": h.filename, "chunk_index": h.chunk_index,
+                    {"doc_id": h.doc_id, "filename": h.filename, "chunk_index": h.chunk_index,
                      "score": round(h.score, 4), "snippet": h.text}
                     for h in hits
                 ]
