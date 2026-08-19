@@ -55,13 +55,15 @@ class Agent:
             if not resp.tool_calls:
                 return AgentResult(answer=resp.content or "", trace=trace, sources=sources)
 
-            # record the assistant's tool-call turn
+            # record the assistant's tool-call turn.
+            # content must be null (not "") alongside tool_calls for Gemini/OpenAI-compat.
             messages.append({
                 "role": "assistant",
-                "content": resp.content or "",
+                "content": resp.content if resp.content else None,
                 "tool_calls": [
                     {"id": tc.id, "type": "function",
-                     "function": {"name": tc.name, "arguments": json.dumps(tc.arguments)}}
+                     "function": {"name": tc.name, "arguments": json.dumps(tc.arguments)},
+                     **({"extra_content": tc.extra} if tc.extra else {})}
                     for tc in resp.tool_calls
                 ],
             })

@@ -21,6 +21,7 @@ class ToolCall:
     id: str
     name: str
     arguments: dict
+    extra: dict | None = None  # provider-specific fields to echo back (e.g. Gemini thought_signature)
 
 
 @dataclass
@@ -50,7 +51,8 @@ class OpenAICompatibleLLM:
         msg = resp.json()["choices"][0]["message"]
         calls = [
             ToolCall(id=tc["id"], name=tc["function"]["name"],
-                     arguments=json.loads(tc["function"]["arguments"] or "{}"))
+                     arguments=json.loads(tc["function"]["arguments"] or "{}"),
+                     extra=tc.get("extra_content"))
             for tc in msg.get("tool_calls", []) or []
         ]
         return LLMResponse(content=msg.get("content"), tool_calls=calls)
@@ -148,7 +150,8 @@ class _AzureLLM(OpenAICompatibleLLM):
         msg = resp.json()["choices"][0]["message"]
         calls = [
             ToolCall(id=tc["id"], name=tc["function"]["name"],
-                     arguments=json.loads(tc["function"]["arguments"] or "{}"))
+                     arguments=json.loads(tc["function"]["arguments"] or "{}"),
+                     extra=tc.get("extra_content"))
             for tc in msg.get("tool_calls", []) or []
         ]
         return LLMResponse(content=msg.get("content"), tool_calls=calls)
